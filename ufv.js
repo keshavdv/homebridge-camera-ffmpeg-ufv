@@ -263,8 +263,9 @@ UFV.prototype.handleStreamRequest = function(request) {
         var height = 720;
         var fps = 30;
         var vbitrate = 300;
-        var abitrate = 32;
+        var abitrate = 24;
         var asamplerate = 16;
+        var abuffsize = 48;
         var vcodec = this.vcodec || 'libx264';
         var acodec = this.acodec || 'libfdk_aac';
 
@@ -312,7 +313,7 @@ UFV.prototype.handleStreamRequest = function(request) {
           '-f', 'rtp',
           '-srtp_out_suite', 'AES_CM_128_HMAC_SHA1_80',
           '-srtp_out_params', videoKey.toString('base64'),
-          `srtp://${targetAddress}:${targetVideoPort}?rtcpport=${targetVideoPort}&localrtcpport=${targetVideoPort}&pkt_size=1378`,
+          `srtp://${targetAddress}:${targetVideoPort}?rtcpport=${targetVideoPort}&localrtcpport=${targetVideoPort}&pkt_size=1316`,
         ];
 
         if(this.audio) {
@@ -324,14 +325,14 @@ UFV.prototype.handleStreamRequest = function(request) {
             '-f', 'null',
             '-ar', asamplerate + 'k',
             '-b:a', abitrate + 'k',
-            '-bufsize', abitrate + 'k',
+            '-bufsize', abuffsize + 'k',
             '-ac', '1',
             '-payload_type', '110',
             '-ssrc', audioSsrc,
             '-f', 'rtp',
             '-srtp_out_suite', 'AES_CM_128_HMAC_SHA1_80',
             '-srtp_out_params', audioKey.toString('base64'),
-            `srtp://${targetAddress}:${targetAudioPort}?rtcpport=${targetAudioPort}&localrtcpport=${targetAudioPort}&pkt_size=1378`,
+            `srtp://${targetAddress}:${targetAudioPort}?rtcpport=${targetAudioPort}&localrtcpport=${targetAudioPort}&pkt_size=188`,
           );
         }
         console.log(ffmpegCommand);
