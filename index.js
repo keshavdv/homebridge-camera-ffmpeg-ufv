@@ -196,9 +196,9 @@ ffmpegUfvPlatform.prototype.accessories = function(callback) {
                       cameraAccessory.configureCameraSource(cameraSource);
 
                       // Setup the Motion Sensors for this camera
-                      if (nvrConfig.motionSensors === false) {
+                      if (nvrConfig.motionSensors === false && !(discoveredCamera.name in nvrConfig.frigateConfig)) {
                         self.log('Skipping '+discoveredCamera.name+' Motion Sensor due to NVR config "motionSensors" disabled.');
-                      } else if (discoveredCamera.recordingSettings.motionRecordEnabled) {
+                      } else if (discoveredCamera.name in nvrConfig.frigateConfig || discoveredCamera.recordingSettings.motionRecordEnabled) {
                         debug('Setting up Motion Sensor for: ' + discoveredCamera.name);
                         var motion = self.setupMotionService(hap, nvrConfig, discoveredNvr, server, discoveredCamera);
                         cameraAccessory.addService(motion);
