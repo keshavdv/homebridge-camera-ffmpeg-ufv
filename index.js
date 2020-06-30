@@ -6,6 +6,7 @@ var http = require('http');
 var https = require('https');
 var URL = require('url');
 var qs = require('qs');
+var mqtt = require('mqtt');
 
 var debug = require('debug')('camera-ffmpeg-ufv');
 var UFV = require('./ufv.js').UFV;
@@ -181,6 +182,10 @@ ffmpegUfvPlatform.prototype.accessories = function(callback) {
                       debug('Config: ' + JSON.stringify(videoConfig));
 
                       // Create a new Accessory for this camera:
+                      var type = hap.Accessory.Categories.CAMERA;
+                      if (discoveredCamera.name === nvrConfig.doorbellConfig.name) {
+                        type = hap.Accessory.Categories.VIDEO_DOORBELL;
+                      }
                       var cameraAccessory = new Accessory(discoveredCamera.name, discoveredCamera.uuid, hap.Accessory.Categories.CAMERA);
                       var cameraConfig = {name: discoveredCamera.name, videoConfig: videoConfig};
                       cameraAccessory
@@ -195,6 +200,27 @@ ffmpegUfvPlatform.prototype.accessories = function(callback) {
                       var cameraSource = new UFV(hap, cameraConfig);
                       cameraAccessory.configureCameraSource(cameraSource);
 
+                      if (discoveredCamera.name === nvrConfig.doorbellConfig.name) {
+                        var doorbellService = new Service.Doorbell(discoveredCamera.name);
+                        cameraAccessory.addService(doorbellService);
+                        var client = mqtt.connect('mqtt://' + nvrConfig.doorbellConfig.mqttHost)
+                        var topic = nvrConfig.doorbellConfig.topic;
+                        client.on('connect', function () {
+                          client.subscribe(topic, function (err) {
+                            if (!err) {
+                              debug(discoveredCamera.name + " subscribed to " + topic);
+                            } else {
+                              debug(discoveredCamera.name + " failed to subscribe to " + topic + ":" + err.message);
+                            }
+                          })
+                        })
+                        client.on('message', function (topic, message) {
+                            if(message.toString() === "ON") {
+                              cameraAccessory.getService(Service.Doorbell).getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(0);
+                              debug(discoveredCamera.name + " publishing doorbell press");
+                            }
+                        })
+                      }
                       // Setup the Motion Sensors for this camera
                       if (nvrConfig.motionSensors === false && !(discoveredCamera.name in nvrConfig.frigateConfig)) {
                         self.log('Skipping '+discoveredCamera.name+' Motion Sensor due to NVR config "motionSensors" disabled.');
